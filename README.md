@@ -33,7 +33,7 @@ local Tab = Window:CreateTab("Main", 4483362458)
 local LocalPlayer = Players.LocalPlayer
 
 local allSeenTargetNames, selectedTargets, selectedTeams, flagKillWhitelistTeams = {}, {}, {}, {}
-local swordKillEnabled, autoTPEnabled, autoEquipEnabled, killInAreaEnabled = false, false, false, false
+local swordKillEnabled, autoTPEnabled, autoEquipEnabled, killInAreaEnabled, autoCollectCoins = false, false, false, false, false
 
 local function arraysEqual(a, b)
     if #a ~= #b then return false end
@@ -211,42 +211,24 @@ local function AutoEquipSword()
     end
 end
 
-local middlePosition = Vector3.new(-28, 42, -83)
-local killRadius = 200
+local function AutoCollectCoins()
+    while autoCollectCoins do
+        pcall(function()
+            local char = Players.LocalPlayer.Character
+            if not char then return end
 
-local function KillPlayersInArea()
-    local localChar = LocalPlayer.Character
-    if not localChar then return end
-
-    local tool = localChar:FindFirstChildOfClass("Tool") or LocalPlayer.Backpack:FindFirstChildOfClass("Tool")
-    if not tool then return end
-
-    local toolHandle = tool:FindFirstChild("Handle")
-    if not toolHandle then return end
-
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Name ~= "TheRealJohnny3ins" then
-            local char = plr.Character
-            if char then
-                local hrp = char:FindFirstChild("HumanoidRootPart")
-                local humanoid = char:FindFirstChild("Humanoid")
-                if hrp and humanoid and humanoid.Health > 0 then
-                    local dist = (hrp.Position - middlePosition).Magnitude
-                    if dist <= killRadius and hrp.Position.Y < 60 then
-                        if not plr.Team or not table.find(flagKillWhitelistTeams, plr.Team.Name) then
-                            for _, part in ipairs(char:GetChildren()) do
-                                if part:IsA("BasePart") then
-                                    local useEvent = tool:FindFirstChild("Use")
-                                    if useEvent then useEvent:FireServer() end
-                                    firetouchinterest(toolHandle, part, 0)
-                                    firetouchinterest(toolHandle, part, 1)
-                                end
-                            end
+            for _, coin in ipairs(workspace:GetDescendants()) do
+                if coin:IsA("BasePart") and coin.Name:lower():find("coin") then
+                    for _, myPart in ipairs(char:GetDescendants()) do
+                        if myPart:IsA("BasePart") then
+                            firetouchinterest(myPart, coin, 0)
+                            firetouchinterest(myPart, coin, 1)
                         end
                     end
                 end
             end
-        end
+        end)
+        task.wait(1)
     end
 end
 
@@ -291,3 +273,14 @@ Tab:CreateToggle({
     end,
 })
 
+Tab:CreateToggle({
+    Name = "Auto Collect Coins",
+    CurrentValue = false,
+    Flag = "AutoCollectCoinsToggle",
+    Callback = function(Value)
+        autoCollectCoins = Value
+        if Value then
+            spawn(AutoCollectCoins)
+        end
+    end,
+})
