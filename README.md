@@ -33,7 +33,7 @@ local Tab = Window:CreateTab("Main", 4483362458)
 local LocalPlayer = Players.LocalPlayer
 
 local allSeenTargetNames, selectedTargets, selectedTeams, flagKillWhitelistTeams = {}, {}, {}, {}
-local swordKillEnabled, autoTPEnabled, autoEquipEnabled, killInAreaEnabled, autoCollectCoins = false, false, false, false, false
+local swordKillEnabled, autoTPEnabled, autoEquipEnabled, killInAreaEnabled, autoCollectCoins, autoStepOnCoinPlate = false, false, false, false, false, false
 
 local function arraysEqual(a, b)
     if #a ~= #b then return false end
@@ -232,6 +232,21 @@ local function AutoCollectCoins()
     end
 end
 
+local coinPlatePosition = Vector3.new(63.72, -99.5, 165.49)
+
+local function StepOnCoinPlateLoop()
+    while autoStepOnCoinPlate do
+        pcall(function()
+            local char = Players.LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                hrp.CFrame = CFrame.new(coinPlatePosition + Vector3.new(0, 3, 0))
+            end
+        end)
+        task.wait(2)
+    end
+end
+
 Tab:CreateToggle({
     Name = "Sword Kill",
     CurrentValue = false,
@@ -277,10 +292,4 @@ Tab:CreateToggle({
     Name = "Auto Collect Coins",
     CurrentValue = false,
     Flag = "AutoCollectCoinsToggle",
-    Callback = function(Value)
-        autoCollectCoins = Value
-        if Value then
-            spawn(AutoCollectCoins)
-        end
-    end,
-})
+    Callback = function
